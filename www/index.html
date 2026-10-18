@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>TransClick Driver</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- Loading -->
+    <section id="screen-loading" class="screen active">
+      <div class="spinner"></div>
+    </section>
+
+    <!-- SCAN -->
+    <section id="screen-scan" class="screen">
+      <div class="brand">
+        <div class="logo">🚛</div>
+        <h1>TransClick Driver</h1>
+        <p class="muted">Scan the QR on your bilty to start live tracking.</p>
+      </div>
+      <button id="btn-scan" class="btn btn-primary btn-lg">Scan Bilty QR</button>
+      <button id="btn-manual-toggle" class="btn btn-ghost">Enter bilty manually</button>
+
+      <div id="manual-box" class="card hidden">
+        <label>Bilty / LR Number</label>
+        <input id="m-bilty" inputmode="text" placeholder="e.g. 051" />
+        <label>Vehicle Number</label>
+        <input id="m-vehicle" inputmode="text" placeholder="e.g. RJ14GA1234" />
+        <button id="btn-manual-go" class="btn btn-primary">Continue</button>
+      </div>
+      <p id="scan-error" class="error hidden"></p>
+    </section>
+
+    <!-- CONFIRM -->
+    <section id="screen-confirm" class="screen">
+      <h2>Start Trip</h2>
+      <div class="card">
+        <p class="kv"><span>Bilty No.</span><b id="c-bilty">—</b></p>
+        <p class="kv"><span>Vehicle</span><b id="c-vehicle">—</b></p>
+        <p class="kv"><span>To</span><b id="c-to">—</b></p>
+        <p class="kv"><span>Consignee</span><b id="c-consignee">—</b></p>
+      </div>
+      <label>Your Name</label>
+      <input id="d-name" placeholder="Driver name" />
+      <label>Your Mobile</label>
+      <input id="d-mobile" type="tel" maxlength="10" inputmode="numeric" placeholder="10-digit mobile" />
+      <button id="btn-start" class="btn btn-primary btn-lg">Start Live Tracking</button>
+      <button id="btn-confirm-back" class="btn btn-ghost">Back</button>
+      <p id="confirm-error" class="error hidden"></p>
+    </section>
+
+    <!-- TRACKING -->
+    <section id="screen-track" class="screen">
+      <div class="status-head">
+        <div class="pulse"></div>
+        <div>
+          <p class="status-title" id="track-status">Location is being shared</p>
+          <p class="muted" id="track-sub">Keep this app installed — tracking runs in background.</p>
+        </div>
+      </div>
+      <div class="card">
+        <p class="kv"><span>Bilty</span><b id="t-bilty">—</b></p>
+        <p class="kv"><span>Vehicle</span><b id="t-vehicle">—</b></p>
+        <p class="kv"><span>Last sent</span><b id="t-last">—</b></p>
+      </div>
+
+      <div id="pod-zone">
+        <p class="muted small">Delivered the goods? Submit POD. Tracking stays on until the admin closes the trip.</p>
+        <button id="btn-pod" class="btn btn-primary btn-lg">Mark Delivery Complete (POD)</button>
+      </div>
+
+      <div id="await-close" class="card hidden await">
+        <p class="status-title ok">POD submitted ✓</p>
+        <p class="muted small">Waiting for the admin to close the trip. Location is still sharing — please keep the app open.</p>
+      </div>
+    </section>
+
+    <!-- DONE -->
+    <section id="screen-done" class="screen">
+      <div class="done-icon">✓</div>
+      <h2>Trip Closed</h2>
+      <p class="muted">Delivery done and the admin has closed this trip. Tracking has stopped.</p>
+      <b id="done-bilty" class="pill"></b>
+      <button id="btn-new" class="btn btn-primary btn-lg">Scan a New Trip</button>
+    </section>
+
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
