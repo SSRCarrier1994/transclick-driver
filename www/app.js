@@ -6,10 +6,24 @@ var API = 'https://transclick.in'
 
 // ── Capacitor plugin handles (via the native bridge) ────────────────
 var Cap = window.Capacitor || {}
-function plugin(name) { try { return Cap.registerPlugin ? Cap.registerPlugin(name) : null } catch (e) { return null } }
-var BG = plugin('BackgroundGeolocation')
-var Scanner = plugin('BarcodeScanning')
-var isNative = !!(Cap.isNativePlatform && Cap.isNativePlatform())
+// Resolve a plugin lazily, trying both the Plugins registry (non-bundled
+// apps) and registerPlugin(). Lazy so the bridge is surely ready.
+function plugin(name) {
+  try {
+    if (Cap && Cap.Plugins && Cap.Plugins[name]) return Cap.Plugins[name]
+    if (Cap && typeof Cap.registerPlugin === 'function') return Cap.registerPlugin(name)
+  } catch (e) {}
+  return null
+}
+function getBG() { return plugin('BackgroundGeolocation') }
+function getScanner() { return plugin('BarcodeScanning') }
+var isNative = (function () {
+  try {
+    if (Cap && typeof Cap.isNativePlatform === 'function') return !!Cap.isNativePlatform()
+    if (Cap && typeof Cap.getPlatform === 'function') return Cap.getPlatform() !== 'web'
+  } catch (e) {}
+  return !!(Cap && Cap.Plugins)   // bridge present ⇒ treat as native
+})()
 
 // ── State ───────────────────────────────────────────────────────────
 var state = {
@@ -49,7 +63,11 @@ function api(path, body) {
 // ── QR scan (MLKit) ─────────────────────────────────────────────────
 function scanQR() {
   setErr('scan-error', '')
-  if (!Scanner || !isNative) { setErr('scan-error', 'Scanning works only in the installed app. Use "Enter bilty manually".'); return }
+  var Scanner = getScanner()
+  if (!Scanner) {
+    setErr('scan-error', 'Scanner not available on this device. Please use "Enter bilty manually".')
+    return
+  }
   Scanner.requestPermissions().then(function (p) {
     if (p && p.camera !== 'granted' && p.camera !== 'limited') { setErr('scan-error', 'Camera permission is needed to scan. Allow it in Settings.'); return }
     function doScan() {
@@ -146,7 +164,8 @@ function enterTracking() {
 
 // ── Background geolocation ──────────────────────────────────────────
 function startWatcher() {
-  if (!BG || !isNative) { // browser fallback (testing only)
+  var BG = getBG()
+  if (!BG) { // browser fallback (testing only)
     browserWatch(); return
   }
   if (state.watcherId) return
@@ -170,6 +189,7 @@ function startWatcher() {
 }
 
 function stopWatcher() {
+  var BG = getBG()
   if (BG && state.watcherId) { try { BG.removeWatcher({ id: state.watcherId }) } catch (e) {} state.watcherId = null }
   if (state._bw) { clearInterval(state._bw); state._bw = null }
   if (navigator.geolocation && state._wid != null) { navigator.geolocation.clearWatch(state._wid); state._wid = null }
