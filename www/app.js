@@ -4,26 +4,28 @@
 // ── Config ──────────────────────────────────────────────────────────
 var API = 'https://transclick.in'
 
-// ── Capacitor plugin handles (via the native bridge) ────────────────
-var Cap = window.Capacitor || {}
-// Resolve a plugin lazily, trying both the Plugins registry (non-bundled
-// apps) and registerPlugin(). Lazy so the bridge is surely ready.
+// ── Capacitor plugin handles ────────────────────────────────────────
+// capacitor.js (core) is loaded before this file, so window.Capacitor has
+// registerPlugin(). Read it fresh each time to avoid any load-order issue.
+function cap() { return window.Capacitor || {} }
 function plugin(name) {
+  var C = cap()
   try {
-    if (Cap && Cap.Plugins && Cap.Plugins[name]) return Cap.Plugins[name]
-    if (Cap && typeof Cap.registerPlugin === 'function') return Cap.registerPlugin(name)
+    if (typeof C.registerPlugin === 'function') return C.registerPlugin(name)
+    if (C.Plugins && C.Plugins[name]) return C.Plugins[name]
   } catch (e) {}
   return null
 }
 function getBG() { return plugin('BackgroundGeolocation') }
 function getScanner() { return plugin('BarcodeScanning') }
-var isNative = (function () {
+function isNative() {
+  var C = cap()
   try {
-    if (Cap && typeof Cap.isNativePlatform === 'function') return !!Cap.isNativePlatform()
-    if (Cap && typeof Cap.getPlatform === 'function') return Cap.getPlatform() !== 'web'
+    if (typeof C.isNativePlatform === 'function') return !!C.isNativePlatform()
+    if (typeof C.getPlatform === 'function') return C.getPlatform() !== 'web'
   } catch (e) {}
-  return !!(Cap && Cap.Plugins)   // bridge present ⇒ treat as native
-})()
+  return !!(C && C.Plugins)
+}
 
 // ── State ───────────────────────────────────────────────────────────
 var state = {
