@@ -571,6 +571,7 @@
       });
     });
   }
+  var scanListener = null;
   function scanQR() {
     setErr("scan-error", "");
     var Scanner = getScanner();
@@ -580,25 +581,40 @@
     }
     Scanner.requestPermissions().then(function(p) {
       if (p && p.camera !== "granted" && p.camera !== "limited") {
-        setErr("scan-error", "Camera permission is needed to scan. Allow it in Settings.");
+        setErr("scan-error", 'Camera permission is needed. Enable it for this app in Settings, or use "Enter bilty manually".');
         return;
       }
-      function doScan() {
-        return Scanner.scan({ formats: ["QR_CODE"] }).then(function(res) {
-          var list = res && res.barcodes || [];
-          if (!list.length) return;
-          onScanned(list[0].rawValue || list[0].displayValue || "");
-        });
-      }
-      var pre = Scanner.isGoogleBarcodeScannerModuleAvailable ? Scanner.isGoogleBarcodeScannerModuleAvailable().then(function(a) {
-        if (a && a.available) return;
-        return Scanner.installGoogleBarcodeScannerModule ? Scanner.installGoogleBarcodeScannerModule() : null;
-      }).catch(function() {
-      }) : Promise.resolve();
-      return pre.then(doScan);
+      document.documentElement.classList.add("scanning");
+      document.body.classList.add("scanning");
+      $("scan-overlay").classList.remove("hidden");
+      return Scanner.addListener("barcodeScanned", function(result) {
+        var raw = result && result.barcode && (result.barcode.rawValue || result.barcode.displayValue);
+        stopScan();
+        if (raw) onScanned(raw);
+      }).then(function(handle) {
+        scanListener = handle;
+        return Scanner.startScan({ formats: ["QR_CODE"], lensFacing: "BACK" });
+      });
     }).catch(function(e) {
-      setErr("scan-error", 'Could not open the scanner. Try "Enter bilty manually".');
+      stopScan();
+      setErr("scan-error", 'Could not open the camera. Please use "Enter bilty manually".');
     });
+  }
+  function stopScan() {
+    var Scanner = getScanner();
+    try {
+      if (scanListener && scanListener.remove) scanListener.remove();
+    } catch (e) {
+    }
+    scanListener = null;
+    try {
+      if (Scanner && Scanner.stopScan) Scanner.stopScan();
+    } catch (e) {
+    }
+    document.documentElement.classList.remove("scanning");
+    document.body.classList.remove("scanning");
+    var ov = $("scan-overlay");
+    if (ov) ov.classList.add("hidden");
   }
   function onScanned(raw) {
     var id = "";
@@ -842,6 +858,8 @@
   }
   document.addEventListener("DOMContentLoaded", function() {
     $("btn-scan").addEventListener("click", scanQR);
+    var sc = $("btn-scan-cancel");
+    if (sc) sc.addEventListener("click", stopScan);
     $("btn-manual-toggle").addEventListener("click", function() {
       $("manual-box").classList.toggle("hidden");
     });
