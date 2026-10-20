@@ -594,14 +594,29 @@
     });
   }
   var scanListener = null;
+  function dbg(stage, extra) {
+    var msg = "[scan] " + stage + (extra ? " :: " + extra : "");
+    try {
+      console.log(msg);
+    } catch (e) {
+    }
+    try {
+      var el = $("scan-dbg");
+      if (el) el.textContent = msg;
+    } catch (e) {
+    }
+  }
   function scanQR() {
     setErr("scan-error", "");
     var Scanner = getScanner();
+    dbg("tap", "native=" + isNative() + " scanner=" + !!Scanner);
     if (!Scanner) {
       setErr("scan-error", 'Scanner not available on this device. Please use "Enter bilty manually".');
       return;
     }
+    dbg("requestPermissions...");
     Scanner.requestPermissions().then(function(p) {
+      dbg("permission", p && p.camera);
       if (p && p.camera !== "granted" && p.camera !== "limited") {
         setErr("scan-error", 'Camera permission is needed. Enable it for this app in Settings, or use "Enter bilty manually".');
         return;
@@ -609,17 +624,24 @@
       document.documentElement.classList.add("scanning");
       document.body.classList.add("scanning");
       $("scan-overlay").classList.remove("hidden");
+      dbg("overlay shown, adding listener");
       return Scanner.addListener("barcodeScanned", function(result) {
         var raw = result && result.barcode && (result.barcode.rawValue || result.barcode.displayValue);
+        dbg("barcodeScanned", raw);
         stopScan();
         if (raw) onScanned(raw);
       }).then(function(handle) {
         scanListener = handle;
+        dbg("listener added, calling startScan");
         return Scanner.startScan({ formats: ["QR_CODE"], lensFacing: "BACK" });
+      }).then(function() {
+        dbg("startScan resolved (camera should be live)");
       });
     }).catch(function(e) {
+      var msg = e && (e.message || e.errorMessage) ? e.message || e.errorMessage : String(e);
+      dbg("ERROR", msg);
       stopScan();
-      setErr("scan-error", 'Could not open the camera. Please use "Enter bilty manually".');
+      setErr("scan-error", "Camera error: " + msg + ' \u2014 use "Enter bilty manually".');
     });
   }
   function stopScan() {

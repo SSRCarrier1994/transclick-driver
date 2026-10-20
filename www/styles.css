@@ -80,3 +80,7 @@ body.scanning #app { display: none !important; }
 .scan-cancel{
   background:rgba(0,0,0,.55); color:#fff; width:auto; padding:12px 28px; border-radius:999px;
 }
+.scan-dbg{
+  color:#fff; font-size:12px; font-family:monospace; margin:0 16px; text-align:center;
+  background:rgba(0,0,0,.6); padding:6px 10px; border-radius:8px; max-width:90vw; word-break:break-word;
+}
