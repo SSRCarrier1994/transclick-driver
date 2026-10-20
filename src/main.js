@@ -1,12 +1,16 @@
 /* TransClick Driver — native background tracking app (bundled with esbuild) */
 import { registerPlugin, Capacitor, CapacitorHttp } from '@capacitor/core'
+import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning'
 
 // ── Config ──────────────────────────────────────────────────────────
 var API = 'https://transclick.in'
 
 // ── Capacitor plugin handles (real registerPlugin from @capacitor/core) ─
+// NOTE: native plugin name is "BarcodeScanner" (not "BarcodeScanning").
+// Using the package's own exported object guarantees the name matches the
+// native @CapacitorPlugin(name = "BarcodeScanner") registration.
 var BG_PLUGIN = registerPlugin('BackgroundGeolocation')
-var SCANNER_PLUGIN = registerPlugin('BarcodeScanning')
+var SCANNER_PLUGIN = BarcodeScanner
 function getBG() { return BG_PLUGIN }
 function getScanner() { return SCANNER_PLUGIN }
 function isNative() { try { return Capacitor.isNativePlatform() } catch (e) { return true } }
