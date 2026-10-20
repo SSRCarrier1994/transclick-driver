@@ -518,6 +518,13 @@
   function getScanner() {
     return SCANNER_PLUGIN;
   }
+  function isNative() {
+    try {
+      return Capacitor.isNativePlatform();
+    } catch (e) {
+      return true;
+    }
+  }
   var state = {
     sessionId: null,
     bilty: null,
@@ -561,9 +568,24 @@
     }
   }
   function api(path, body) {
-    return fetch(API + path, {
+    var url = API + path;
+    var headers = { "Content-Type": "application/json", Accept: "application/json" };
+    if (isNative() && CapacitorHttp) {
+      var req = body ? CapacitorHttp.post({ url, headers, data: body }) : CapacitorHttp.get({ url, headers });
+      return req.then(function(res) {
+        var data = res.data;
+        if (typeof data === "string") {
+          try {
+            data = JSON.parse(data);
+          } catch (e) {
+          }
+        }
+        return { ok: res.status >= 200 && res.status < 300, status: res.status, data };
+      });
+    }
+    return fetch(url, {
       method: body ? "POST" : "GET",
-      headers: body ? { "Content-Type": "application/json" } : void 0,
+      headers: body ? headers : void 0,
       body: body ? JSON.stringify(body) : void 0
     }).then(function(r) {
       return r.json().then(function(d) {
@@ -691,10 +713,11 @@
       save();
       enterTracking();
       startWatcher();
-    }).catch(function() {
+    }).catch(function(e) {
       btn.disabled = false;
       btn.textContent = "Start Live Tracking";
-      setErr("confirm-error", "Network error. Check your internet.");
+      var msg = e && (e.message || e.error || e.toString && e.toString()) || "unknown";
+      setErr("confirm-error", "Could not reach server: " + msg);
     });
   }
   function enterTracking() {
