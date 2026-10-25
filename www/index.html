@@ -68,8 +68,11 @@
       </div>
 
       <div id="pod-zone">
-        <p class="muted small">Delivered the goods? Submit POD. Tracking stays on until the admin closes the trip.</p>
-        <button id="btn-pod" class="btn btn-primary btn-lg">Mark Delivery Complete (POD)</button>
+        <p class="muted small">Delivered the goods? Add a POD photo (optional) and mark delivered. Tracking stays on until the admin closes the trip.</p>
+        <input type="file" id="pod-photo" accept="image/*" capture="environment" class="hidden" />
+        <label for="pod-photo" id="pod-photo-label" class="btn btn-ghost">📷 Add POD photo (optional)</label>
+        <img id="pod-preview" class="pod-preview hidden" alt="POD" />
+        <button id="btn-pod" class="btn btn-primary btn-lg">Mark Delivered</button>
       </div>
 
       <div id="await-close" class="card hidden await">

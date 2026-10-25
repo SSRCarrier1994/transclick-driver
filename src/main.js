@@ -275,15 +275,43 @@ function setAwaiting(v) {
 }
 
 // ── POD ─────────────────────────────────────────────────────────────
+var podPhotoData = null
+
+// Read the chosen photo, shrink it (so uploads stay small), show a preview.
+function handlePodPhoto(e) {
+  var file = e.target.files && e.target.files[0]
+  if (!file) return
+  var reader = new FileReader()
+  reader.onload = function (ev) {
+    var img = new Image()
+    img.onload = function () {
+      var max = 1280, w = img.width, h = img.height
+      if (w > h && w > max) { h = Math.round(h * max / w); w = max }
+      else if (h >= w && h > max) { w = Math.round(w * max / h); h = max }
+      var c = document.createElement('canvas')
+      c.width = w; c.height = h
+      c.getContext('2d').drawImage(img, 0, 0, w, h)
+      try { podPhotoData = c.toDataURL('image/jpeg', 0.7) } catch (err) { podPhotoData = ev.target.result }
+      var prev = $('pod-preview'); if (prev) { prev.src = podPhotoData; prev.classList.remove('hidden') }
+      var lbl = $('pod-photo-label'); if (lbl) lbl.textContent = '📷 Photo added — tap to change'
+    }
+    img.src = ev.target.result
+  }
+  reader.readAsDataURL(file)
+}
+
 function submitPOD() {
   if (!state.sessionId) return
-  if (!window.confirm('Mark this delivery complete? Tracking will continue until the admin closes it.')) return
+  if (!window.confirm('Mark this delivery as delivered? Tracking will continue until the admin closes it.')) return
   var btn = $('btn-pod'); btn.disabled = true; btn.textContent = 'Submitting…'
-  api('/api/driver/pod', { session_id: state.sessionId }).then(function (r) {
-    btn.disabled = false; btn.textContent = 'Mark Delivery Complete (POD)'
+  var payload = { session_id: state.sessionId }
+  if (podPhotoData) payload.pod_image = podPhotoData
+  api('/api/driver/pod', payload).then(function (r) {
+    btn.disabled = false; btn.textContent = 'Mark Delivered'
     if (!r.ok) { window.alert((r.data && r.data.error) || 'POD failed. Try again.'); return }
+    podPhotoData = null
     setAwaiting(true)
-  }).catch(function () { btn.disabled = false; btn.textContent = 'Mark Delivery Complete (POD)'; window.alert('No internet. Try again.') })
+  }).catch(function () { btn.disabled = false; btn.textContent = 'Mark Delivered'; window.alert('No internet. Try again.') })
 }
 
 // ── Trip closed by admin ────────────────────────────────────────────
@@ -321,6 +349,7 @@ document.addEventListener('DOMContentLoaded', function () {
   $('btn-start').addEventListener('click', startTrip)
   $('btn-confirm-back').addEventListener('click', function () { show('screen-scan') })
   $('btn-pod').addEventListener('click', submitPOD)
+  var pp = $('pod-photo'); if (pp) pp.addEventListener('change', handlePodPhoto)
   $('btn-new').addEventListener('click', function () { show('screen-scan') })
   resume()
 })
